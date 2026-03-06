@@ -1,4 +1,6 @@
 import DressStyle from "@/components/DressStyle/dressStyle";
+import Footer from "@/components/Footer/footer";
+
 import Hero from "@/components/Hero/hero";
 import Navigation from "@/components/Navigation/navigation";
 import ProductSection from "@/components/ProductSection/productSection";
@@ -82,6 +84,7 @@ export default function Home() {
       <ProductSection title="TOP SELLING" products={topSelling} hideBorder />
       <DressStyle />
       <TestimonialSection />
+      <Footer />
     </main>
   );
 }
