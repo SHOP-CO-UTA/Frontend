@@ -25,7 +25,6 @@ const FilterSidebar = ({ isOpen, onClose }: FilterSidebarProps) => {
 
   return (
     <>
-      {/* Lớp phủ mờ khi mở Drawer trên mobile */}
       <div 
         className={`${styles.overlay} ${isOpen ? styles.showOverlay : ""}`} 
         onClick={onClose} 
@@ -34,9 +33,7 @@ const FilterSidebar = ({ isOpen, onClose }: FilterSidebarProps) => {
       <aside className={`${styles.sidebar} ${isOpen ? styles.open : ""}`}>
         <div className={styles.header}>
           <h3>Filters</h3>
-          {/* Icon X chỉ hiện trên mobile để đóng */}
           <X className={styles.closeIcon} size={24} onClick={onClose} />
-          {/* Icon Sliders chỉ hiện trên desktop */}
           <SlidersHorizontal className={styles.filterIcon} size={20} />
         </div>
 

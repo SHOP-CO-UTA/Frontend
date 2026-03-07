@@ -1,6 +1,5 @@
 @import "@/styles/variable.scss";
 
-// Overlay cho mobile
 .overlay {
   display: none;
   @media (max-width: 1024px) {
@@ -36,20 +35,14 @@
   display: flex;
   flex-direction: column;
 
-  // Cấu hình Drawer cho Mobile
   @media (max-width: 1024px) {
     position: fixed;
     top: 0;
     right: 0;
-    bottom: 0; // Quan trọng: Ép dính xuống đáy màn hình
-    width: 100%;
-    max-width: 390px;
+    bottom: 0; 
+    max-width: 60%;
+    max-height: 95%;
     
-    // Sử dụng dvh (Dynamic Viewport Height) để chuẩn xác trên mọi trình duyệt mobile
-    height: 100dvh; 
-    max-height: 100dvh;
-    
-    // Loại bỏ border và bo góc không cần thiết để tránh cảm giác lơ lửng
     border: none; 
     border-radius: 0; 
     border-top-left-radius: 20px; 
@@ -59,7 +52,6 @@
     transform: translateX(100%);
     transition: transform 0.3s ease-in-out;
     
-    // Đảm bảo background phẳng và shadow tạo độ nổi thay vì dùng border
     background: #fff;
     box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1); 
 
@@ -92,11 +84,9 @@
   }
 }
 
-// Nội dung cuộn được khi filter quá dài
 .scrollContent {
   flex: 1;
   overflow-y: auto;
-  // padding-right: 5px;
   padding: 0 20px;
   
   &::-webkit-scrollbar { width: 0; }
@@ -137,7 +127,6 @@
   margin-bottom: 15px;
 }
 
-/* Ẩn giao diện mặc định của input range nhưng giữ vùng tương tác */
 .rangeInput {
   position: absolute;
   width: 100%;
@@ -145,7 +134,7 @@
   top: 50%;
   transform: translateY(-50%);
   background: none;
-  pointer-events: none; // Cho phép click xuyên qua input
+  pointer-events: none;
   appearance: none;
   -webkit-appearance: none;
   z-index: 2;
@@ -271,7 +260,7 @@
 }
 
 .applyBtn {
-  margin-top: auto; // Luôn nằm dưới cùng Drawer
+  margin-top: auto;
   width: 100%;
   padding: 16px;
   background: #000;
