@@ -1,4 +1,4 @@
-@import "@/styles/variable.scss";
+@use "@/styles/variable.scss" as v;
 
 .categoryLayout {
   display: grid;
@@ -23,7 +23,7 @@
     justify-content: space-between;
     align-items: center;
     h2 {
-      font-family: var(--font-integral-cf);
+      font-family: v.$font-heading;
       font-size: 32px;
     }
     .meta {
@@ -31,6 +31,7 @@
       align-items: center;
       gap: 12px;
       font-size: 16px;
+      padding-left: 10px;
       color: rgba(0, 0, 0, 0.6);
       strong {
         color: #000;
