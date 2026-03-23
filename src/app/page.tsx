@@ -1,10 +1,10 @@
 import DressStyle from "@/components/DressStyle/dressStyle";
 import Footer from "@/components/Footer/footer";
-
 import Hero from "@/components/Hero/hero";
 import Navigation from "@/components/Navigation/navigation";
 import ProductSection from "@/components/ProductSection/productSection";
 import TestimonialSection from "@/components/Testimonials/TestimonialSection";
+
 import { Product } from "@/types/product";
 
 export default function Home() {

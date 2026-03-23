@@ -1,9 +1,10 @@
 "use client";
 import React, { useRef, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import TestimonialCard from "./TestimonialCard";
 import styles from "./testimonials.module.scss";
 import { Testimonial } from "@/types/testimonial";
+import TestimonialCard from "./testimonialCard";
+
 
 const TESTIMONIAL_DATA: Testimonial[] = [
   {
@@ -51,44 +52,36 @@ const TESTIMONIAL_DATA: Testimonial[] = [
 const TestimonialSection = () => {
   const sliderRef = useRef<HTMLDivElement>(null);
 
-  // Các state để xử lý logic kéo chuột
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // Logic cuộn bằng nút bấm (giữ nguyên nhưng có lưu ý về behavior)
   const scroll = (direction: "left" | "right") => {
     if (sliderRef.current) {
       const scrollAmount = 400;
       sliderRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth", // Vẫn giữ smooth cho nút bấm
+        behavior: "smooth",
       });
     }
   };
 
-  // 1. Khi nhấn chuột xuống
   const handleMouseDown = (e: React.MouseEvent) => {
     if (!sliderRef.current) return;
     setIsDragging(true);
-    // Tính toán vị trí chuột bắt đầu so với mép trái của slider
     setStartX(e.pageX - sliderRef.current.offsetLeft);
-    // Lưu lại vị trí cuộn hiện tại của slider
     setScrollLeft(sliderRef.current.scrollLeft);
   };
 
-  // 2. Khi chuột rời khỏi vùng slider hoặc thả chuột ra
   const handleMouseEnd = () => {
     setIsDragging(false);
   };
 
-  // 3. Khi đang di chuyển chuột (kéo)
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || !sliderRef.current) return;
-    e.preventDefault(); // Ngăn việc chọn văn bản khi đang kéo
+    e.preventDefault();
 
     const x = e.pageX - sliderRef.current.offsetLeft;
-    // Tính toán quãng đường di chuyển (nhân 1.5 hoặc 2 để cuộn nhanh hơn)
     const walk = (x - startX) * 1.5;
     sliderRef.current.scrollLeft = scrollLeft - walk;
   };
