@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState, use } from "react";
 import Navigation from "@/components/Navigation/navigation";
 import Footer from "@/components/Footer/footer";
@@ -101,9 +101,9 @@ export default function CategoryPage({
         <Breadcrumb category={categoryName} />
 
         <div className={styles.categoryLayout}>
-          <FilterSidebar 
-            isOpen={isFilterOpen} 
-            onClose={() => setIsFilterOpen(false)} 
+          <FilterSidebar
+            isOpen={isFilterOpen}
+            onClose={() => setIsFilterOpen(false)}
           />
 
           <div className={styles.mainContent}>
@@ -113,7 +113,7 @@ export default function CategoryPage({
                 <span>Showing 1-9 of 100 Products</span>
                 <SortDropdown />
 
-                <button 
+                <button
                   className={styles.mobileFilterBtn}
                   onClick={() => setIsFilterOpen(true)}
                 >
