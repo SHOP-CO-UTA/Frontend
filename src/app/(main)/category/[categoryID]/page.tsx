@@ -1,88 +1,26 @@
 "use client";
-import React, { useState, use } from "react";
+import React, { useState, use, useEffect } from "react";
 import Navigation from "@/components/Navigation/navigation";
 import Footer from "@/components/Footer/footer";
 import ProductCard from "@/components/ProductCard/productCard";
 import FilterSidebar from "@/components/FilterSidebar/filterSidebar";
 import Breadcrumb from "@/components/Breadcrumb/breadcrumb";
-import { Product } from "@/types/product";
+import type { CatalogProduct } from "@/types/catalog";
 import styles from "./category.module.scss";
 import SortDropdown from "@/components/SortDropdown/sortDropdown";
 import { SlidersHorizontal } from "lucide-react";
+import { fetchCatalogProducts } from "@/services/catalog.service";
 
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: 1,
-    name: "Gradient Graphic T-shirt",
-    price: 145,
-    rating: 3.5,
-    image: "/images/products/black-orange-tshirt.png",
-  },
-  {
-    id: 2,
-    name: "Polo with Tipping Details",
-    price: 180,
-    rating: 4.5,
-    image: "/images/products/green-shirt.png",
-  },
-  {
-    id: 3,
-    name: "Black Striped T-shirt",
-    price: 120,
-    rating: 5.0,
-    image: "/images/products/black-tshirt.png",
-    originalPrice: 160,
-    discountLabel: "-30%",
-  },
-  {
-    id: 4,
-    name: "Skinny Fit Jeans",
-    price: 240,
-    rating: 4.5,
-    image: "/images/products/blue-jeans.png",
-    originalPrice: 160,
-    discountLabel: "-20%",
-  },
-  {
-    id: 5,
-    name: "Checkered Shirt",
-    price: 180,
-    rating: 4.5,
-    image: "/images/products/purple-shirt.png",
-  },
-  {
-    id: 6,
-    name: "Sleeve Striped T-shirt",
-    price: 130,
-    rating: 4.5,
-    image: "/images/products/orange-tshirt.png",
-    originalPrice: 160,
-    discountLabel: "-30%",
-  },
-  {
-    id: 7,
-    name: "Vertical Striped Shirt",
-    price: 212,
-    rating: 5.0,
-    image: "/images/products/green-shirt.png",
-    originalPrice: 160,
-    discountLabel: "-20%",
-  },
-  {
-    id: 8,
-    name: "Courage Graphic T-shirt",
-    price: 145,
-    rating: 4.0,
-    image: "/images/products/black-orange-tshirt.png",
-  },
-  {
-    id: 9,
-    name: "Loose Fit Bermuda Shorts",
-    price: 80,
-    rating: 3.0,
-    image: "/images/products/blue-short.png",
-  },
-];
+const PAGE_SIZE = 24;
+
+function formatCategoryTitle(categoryID: string): string {
+  const id = categoryID.toLowerCase();
+  if (id === "all") return "All products";
+  return categoryID
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
 
 export default function CategoryPage({
   params,
@@ -90,9 +28,59 @@ export default function CategoryPage({
   params: Promise<{ categoryID: string }>;
 }) {
   const { categoryID } = use(params);
-  const categoryName = categoryID.charAt(0).toUpperCase() + categoryID.slice(1);
+  const categoryName = formatCategoryTitle(categoryID);
+  const categorySlugForApi =
+    categoryID.toLowerCase() === "all" ? null : categoryID;
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [page, setPage] = useState(1);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPage(1);
+  }, [categoryID]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const { count, results } = await fetchCatalogProducts({
+          page,
+          pageSize: PAGE_SIZE,
+          categorySlug: categorySlugForApi,
+        });
+        if (!cancelled) {
+          setProducts(results);
+          setTotalCount(count);
+        }
+      } catch {
+        if (!cancelled) {
+          setError(
+            "Unable to load products. Check that the API is running and NEXT_PUBLIC_API matches your Django server (e.g. http://127.0.0.1:8000/).",
+          );
+          setProducts([]);
+          setTotalCount(0);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [categoryID, page, categorySlugForApi]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const rangeStart = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
+  const rangeEnd = Math.min(page * PAGE_SIZE, totalCount);
 
   return (
     <>
@@ -110,7 +98,11 @@ export default function CategoryPage({
             <div className={styles.toolbar}>
               <h2>{categoryName}</h2>
               <div className={styles.meta}>
-                <span>Showing 1-9 of 100 Products</span>
+                <span>
+                  {loading
+                    ? "Loading…"
+                    : `Showing ${rangeStart}-${rangeEnd} of ${totalCount} Products`}
+                </span>
                 <SortDropdown />
 
                 <button
@@ -122,24 +114,53 @@ export default function CategoryPage({
               </div>
             </div>
 
+            {error && (
+              <p className={styles.meta} style={{ color: "#b42318", marginBottom: 16 }}>
+                {error}
+              </p>
+            )}
+
             <div className={styles.productGrid}>
-              {MOCK_PRODUCTS.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+              {loading && (
+                <p className={styles.meta} style={{ gridColumn: "1 / -1" }}>
+                  Loading products…
+                </p>
+              )}
+              {!loading &&
+                products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              {!loading && !error && products.length === 0 && (
+                <p className={styles.meta} style={{ gridColumn: "1 / -1" }}>
+                  No products found.
+                </p>
+              )}
             </div>
 
             <div className={styles.divider} />
 
             <div className={styles.pagination}>
-              <button className={styles.navBtn}>Previous</button>
+              <button
+                type="button"
+                className={styles.navBtn}
+                disabled={loading || page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Previous
+              </button>
               <div className={styles.pages}>
-                <button className={styles.activePage}>1</button>
-                <button>2</button>
-                <button>3</button>
-                <span>...</span>
-                <button>10</button>
+                <span style={{ padding: "0 8px", fontSize: 14 }}>
+                  Page {page} of {totalPages}
+                </span>
               </div>
-              <button className={styles.navBtn}>Next</button>
+              <button
+                type="button"
+                className={styles.navBtn}
+                disabled={loading || page >= totalPages || totalCount === 0}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>

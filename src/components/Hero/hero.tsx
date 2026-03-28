@@ -18,7 +18,7 @@ export default function Hero() {
               of style.
             </p>
 
-            <Link href="/shop" className={styles.shopBtn}>
+            <Link href="/category/all" className={styles.shopBtn}>
               Shop Now
             </Link>
 

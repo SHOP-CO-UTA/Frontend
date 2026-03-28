@@ -2,11 +2,11 @@
 import Link from 'next/link';
 import ProductCard from '../ProductCard/productCard';
 import styles from './productSection.module.scss';
-import { Product } from '@/types/product';
+import type { CatalogProduct } from "@/types/catalog";
 
 interface ProductSectionProps {
   title: string;
-  products: Product[];
+  products: CatalogProduct[];
   hideBorder?: boolean;
 }
 
