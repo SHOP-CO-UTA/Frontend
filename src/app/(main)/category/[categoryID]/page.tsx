@@ -130,7 +130,16 @@ function CategoryPageContent({
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
-  const [sortLabel, setSortLabel] = useState<string>("Most Popular");
+  const [sortLabel, setSortLabel] = useState<string>(() => {
+    const sortParam = searchParams.get("sort");
+    if (
+      sortParam &&
+      Object.prototype.hasOwnProperty.call(SORT_ORDERING_BY_LABEL, sortParam)
+    ) {
+      return sortParam;
+    }
+    return "Most Popular";
+  });
 
   const [draftCategorySlug, setDraftCategorySlug] = useState(() =>
     normalizeRouteCategorySlug(categoryID),
@@ -244,6 +253,19 @@ function CategoryPageContent({
     setDraftSize(f.size);
     setDraftPriceMin(f.priceMin);
     setDraftPriceMax(f.priceMax);
+
+    // Cập nhật sort từ query (?sort=Newest, ?sort=Most%20Popular, ...)
+    // để "View All" trên Home giữ đúng thứ tự.
+    const sortParam = searchParams.get("sort");
+    if (
+      sortParam &&
+      Object.prototype.hasOwnProperty.call(SORT_ORDERING_BY_LABEL, sortParam)
+    ) {
+      setSortLabel(sortParam);
+    } else {
+      setSortLabel("Most Popular");
+    }
+
     draftFiltersRef.current = {
       categorySlug: slug,
       dressStyle: f.dressStyle,

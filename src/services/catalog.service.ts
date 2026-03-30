@@ -1,5 +1,6 @@
 import api from "@/utils/axios";
 import type { CatalogPaginatedResponse, CatalogProduct } from "@/types/catalog";
+import type { CatalogCategory } from "@/types/catalog";
 
 export type FetchCatalogProductsResult = {
   count: number;
@@ -66,4 +67,12 @@ export async function fetchCatalogProducts(options: {
     previous: data.previous,
     results: data.results,
   };
+}
+
+/**
+ * GET /catalog/dress-styles/ — danh sách Category dùng để lọc "Dress Style".
+ */
+export async function fetchDressStyles(): Promise<CatalogCategory[]> {
+  const { data } = await api.get<CatalogCategory[]>("catalog/dress-styles/");
+  return data;
 }
