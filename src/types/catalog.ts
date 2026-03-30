@@ -15,6 +15,16 @@ export interface CatalogCategory {
   updated_at: string;
 }
 
+export interface CatalogProductVariant {
+  id: number;
+  color: string;
+  size: string;
+  stock: number;
+  sku?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface CatalogProduct {
   id: number;
   name: string;
@@ -30,6 +40,7 @@ export interface CatalogProduct {
   created_at?: string;
   updated_at?: string;
   categories?: CatalogCategory[];
+  variants?: CatalogProductVariant[];
   primary_category?: CatalogCategory | null;
 }
 

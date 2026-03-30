@@ -9,13 +9,18 @@ export type FetchCatalogProductsResult = {
 };
 
 /**
- * GET /catalog/products/ — có phân trang và lọc category tùy chọn.
- * categorySlug = null hoặc bỏ qua → toàn bộ sản phẩm.
+ * GET /catalog/products/ — phân trang, category, dress_style, giá, màu/size (ProductVariant).
  */
 export async function fetchCatalogProducts(options: {
   page?: number;
   pageSize?: number;
   categorySlug?: string | null;
+  dressStyleSlug?: string | null;
+  minPrice?: number;
+  maxPrice?: number;
+  color?: string | null;
+  size?: string | null;
+  ordering?: string | null;
 }): Promise<FetchCatalogProductsResult> {
   const page = options.page ?? 1;
   const pageSize = options.pageSize ?? 24;
@@ -27,6 +32,28 @@ export async function fetchCatalogProducts(options: {
 
   if (options.categorySlug) {
     params.category = options.categorySlug;
+  }
+
+  if (options.dressStyleSlug) {
+    params.dress_style = options.dressStyleSlug;
+  }
+
+  if (options.minPrice !== undefined) {
+    params.min_price = options.minPrice;
+  }
+  if (options.maxPrice !== undefined) {
+    params.max_price = options.maxPrice;
+  }
+
+  if (options.color) {
+    params.color = options.color;
+  }
+  if (options.size) {
+    params.size = options.size;
+  }
+
+  if (options.ordering) {
+    params.ordering = options.ordering;
   }
 
   const { data } = await api.get<CatalogPaginatedResponse>("catalog/products/", {
