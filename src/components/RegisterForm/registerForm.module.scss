@@ -63,6 +63,16 @@ $radius-pill: 50px;
   gap: 0.875rem;
 }
 
+.formError {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-input;
+  font-size: 0.875rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
 .nameRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -230,6 +240,11 @@ $radius-pill: 50px;
 
   &:hover {
     opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   &:focus-visible {

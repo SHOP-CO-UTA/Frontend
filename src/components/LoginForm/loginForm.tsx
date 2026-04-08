@@ -2,9 +2,14 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { User, Eye, EyeOff } from "lucide-react";
 import { SIGNUP } from "@/constants/routes";
+import {
+  extractApiErrorMessage,
+  loginAccount,
+  storeTokens,
+} from "@/services/auth.service";
 import styles from "./loginForm.module.scss";
 
 interface LoginFormProps {
@@ -13,10 +18,43 @@ interface LoginFormProps {
 
 export default function LoginForm({ embedded }: LoginFormProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const signupHref = embedded ? `${pathname}?auth=signup` : SIGNUP;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const data = await loginAccount(email.trim(), password);
+      storeTokens(data.access, data.refresh);
+      if (rememberMe) {
+        try {
+          localStorage.setItem("shopco_remember_me", "1");
+        } catch {
+          /* ignore */
+        }
+      } else {
+        localStorage.removeItem("shopco_remember_me");
+      }
+      if (embedded) {
+        router.replace(pathname);
+      } else {
+        router.push("/");
+      }
+    } catch (err) {
+      setError(extractApiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   const cardContent = (
     <div className={styles.card}>
@@ -25,11 +63,25 @@ export default function LoginForm({ embedded }: LoginFormProps) {
         <p className={styles.subtitle}>Sign in to your SHOP.CO account</p>
       </header>
 
-      <form className={styles.form}>
+      <form className={styles.form} onSubmit={handleSubmit} noValidate>
+        {error ? (
+          <p className={styles.formError} role="alert">
+            {error}
+          </p>
+        ) : null}
         <div className={styles.field}>
           <label htmlFor="email" className={styles.label}>Email</label>
           <div className={styles.inputWrapper}>
-            <input id="email" type="email" placeholder="Enter your email" className={styles.input} autoComplete="email" />
+            <input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              className={styles.input}
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
             <User className={styles.inputIcon} size={20} aria-hidden />
           </div>
         </div>
@@ -37,7 +89,16 @@ export default function LoginForm({ embedded }: LoginFormProps) {
         <div className={styles.field}>
           <label htmlFor="password" className={styles.label}>Password</label>
           <div className={styles.inputWrapper}>
-            <input id="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" className={styles.input} autoComplete="current-password" />
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              className={styles.input}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
             <button type="button" className={styles.iconButton} onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
               {showPassword ? <EyeOff className={styles.inputIcon} size={20} /> : <Eye className={styles.inputIcon} size={20} />}
             </button>
@@ -52,7 +113,9 @@ export default function LoginForm({ embedded }: LoginFormProps) {
           <Link href="/forgot-password" className={styles.forgotLink}>Forgot password?</Link>
         </div>
 
-        <button type="submit" className={styles.submitBtn}>Sign In</button>
+        <button type="submit" className={styles.submitBtn} disabled={submitting}>
+          {submitting ? "Signing in…" : "Sign In"}
+        </button>
 
         <div className={styles.divider}>
           <span className={styles.dividerText}>Or continue with</span>

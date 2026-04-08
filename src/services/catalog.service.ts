@@ -76,3 +76,13 @@ export async function fetchDressStyles(): Promise<CatalogCategory[]> {
   const { data } = await api.get<CatalogCategory[]>("catalog/dress-styles/");
   return data;
 }
+
+/**
+ * GET /catalog/products/:id/ — chi tiết 1 sản phẩm.
+ */
+export async function fetchCatalogProductDetail(
+  productId: number | string,
+): Promise<CatalogProduct> {
+  const { data } = await api.get<CatalogProduct>(`catalog/products/${productId}/`);
+  return data;
+}

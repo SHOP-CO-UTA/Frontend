@@ -7,6 +7,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navigation from "@/components/Navigation/navigation";
 import Footer from "@/components/Footer/footer";
@@ -411,7 +412,13 @@ function CategoryPageContent({
               )}
               {!loading &&
                 products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                  <Link
+                    key={product.id}
+                    href={`/product/${product.id}`}
+                    className={styles.productLink}
+                  >
+                    <ProductCard product={product} />
+                  </Link>
                 ))}
               {!loading && !error && products.length === 0 && (
                 <p className={styles.meta} style={{ gridColumn: "1 / -1" }}>

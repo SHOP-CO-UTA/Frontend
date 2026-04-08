@@ -59,6 +59,16 @@ $radius-pill: 9999px;
   gap: 1.25rem;
 }
 
+.formError {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: $radius-input;
+  font-size: 0.875rem;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -184,6 +194,11 @@ $radius-pill: 9999px;
 
   &:hover {
     opacity: 0.9;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   &:focus-visible {

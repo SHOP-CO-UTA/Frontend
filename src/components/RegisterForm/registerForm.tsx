@@ -2,21 +2,80 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LOGIN } from "@/constants/routes";
+import {
+  extractApiErrorMessage,
+  registerAccount,
+  storeTokens,
+} from "@/services/auth.service";
 import styles from "./registerForm.module.scss";
 
 interface RegisterFormProps {
   embedded?: boolean;
 }
 
+function meetsPasswordHints(password: string): boolean {
+  if (password.length < 8) return false;
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) return false;
+  if (!/\d/.test(password)) return false;
+  return true;
+}
+
 export default function RegisterForm({ embedded }: RegisterFormProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const signinHref = embedded ? `${pathname}?auth=login` : LOGIN;
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!agreeTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    if (!meetsPasswordHints(password)) {
+      setError(
+        "Password must be at least 8 characters and include uppercase, lowercase, and a number."
+      );
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const data = await registerAccount({
+        email: email.trim(),
+        password,
+        password_confirm: confirmPassword,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+      });
+      storeTokens(data.access, data.refresh);
+      if (embedded) {
+        router.replace(pathname);
+      } else {
+        router.push("/");
+      }
+    } catch (err) {
+      setError(extractApiErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   const cardContent = (
     <div className={styles.card}>
@@ -25,31 +84,45 @@ export default function RegisterForm({ embedded }: RegisterFormProps) {
           <p className={styles.subtitle}>Join SHOP.CO and start shopping</p>
         </header>
 
-        <form className={styles.form}>
+        <form className={styles.form} onSubmit={handleSubmit} noValidate>
+          {error ? (
+            <p className={styles.formError} role="alert">
+              {error}
+            </p>
+          ) : null}
           <div className={styles.nameRow}>
             <div className={styles.formGroup}>
               <label htmlFor="firstName" className={styles.label}>
                 First Name
               </label>
-              <input
-                id="firstName"
-                type="text"
-                placeholder="John"
-                className={styles.input}
-                autoComplete="given-name"
-              />
+              <div className={styles.inputWrapper}>
+                <input
+                  id="firstName"
+                  type="text"
+                  placeholder="John"
+                  className={styles.input}
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              </div>
             </div>
+            
             <div className={styles.formGroup}>
               <label htmlFor="lastName" className={styles.label}>
                 Last Name
               </label>
-              <input
-                id="lastName"
-                type="text"
-                placeholder="Doe"
-                className={styles.input}
-                autoComplete="family-name"
-              />
+              <div className={styles.inputWrapper}>
+                <input
+                  id="lastName"
+                  type="text"
+                  placeholder="Doe"
+                  className={styles.input}
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -64,6 +137,9 @@ export default function RegisterForm({ embedded }: RegisterFormProps) {
                 placeholder="john.doe@example.com"
                 className={styles.input}
                 autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
               <span className={styles.inputIcon} aria-hidden>
                 <MailIcon />
@@ -82,6 +158,10 @@ export default function RegisterForm({ embedded }: RegisterFormProps) {
                 placeholder="Create a strong password"
                 className={styles.input}
                 autoComplete="new-password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
               <button
                 type="button"
@@ -110,6 +190,9 @@ export default function RegisterForm({ embedded }: RegisterFormProps) {
                 placeholder="Confirm your password"
                 className={styles.input}
                 autoComplete="new-password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
               />
               <button
                 type="button"
@@ -142,8 +225,8 @@ export default function RegisterForm({ embedded }: RegisterFormProps) {
             </label>
           </div>
 
-          <button type="submit" className={styles.btnPrimary}>
-            Create Account
+          <button type="submit" className={styles.btnPrimary} disabled={submitting}>
+            {submitting ? "Creating account…" : "Create Account"}
           </button>
 
           <div className={styles.divider}>

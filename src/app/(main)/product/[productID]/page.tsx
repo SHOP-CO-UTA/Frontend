@@ -1,38 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { use, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Navigation from "@/components/Navigation/navigation";
 import Footer from "@/components/Footer/footer";
 import ProductCard from "@/components/ProductCard/productCard";
 import type { CatalogProduct } from "@/types/catalog";
+import {
+  fetchCatalogProductDetail,
+  fetchCatalogProducts,
+} from "@/services/catalog.service";
 import styles from "./page.module.scss";
 
-const PRODUCT_IMAGES = [
-  "/images/Image product/image 2.png",
-  "/images/Image product/image 5.png",
-  "/images/Image product/image 6.png",
-];
-
-const MOCK_PRODUCT = {
-  id: 1,
-  name: "ONE LIFE GRAPHIC TSHIRT",
-  image: PRODUCT_IMAGES[0],
-  images: PRODUCT_IMAGES,
-  rating: 4.5,
-  price: 260,
-  originalPrice: 300,
-  discountLabel: "-30%",
-  description:
-    "This graphic t-shirt which is perfect for any occasion. Crafted from a soft cotton blend, it offers superior comfort and style. The graphic print adds a touch of personality to your everyday look. Whether you're heading to a casual outing or just relaxing at home, this tee has you covered.",
-  colors: [
-    { name: "Olive", value: "#8B7355" },
-    { name: "Dark Green", value: "#2D5016" },
-    { name: "Navy", value: "#1e3a5f" },
-  ],
-  sizes: ["Small", "Medium", "Large", "X-Large"],
-};
+const PLACEHOLDER_IMAGE = "/images/products/black-tshirt.png";
 
 const MOCK_REVIEWS = [
   { id: 1, name: "Samantha D.", rating: 5, text: "The quality is amazing! Fits perfectly and the fabric is so soft. Will definitely buy again.", date: "August 15, 2023", verified: true },
@@ -43,55 +24,168 @@ const MOCK_REVIEWS = [
   { id: 6, name: "Michael P.", rating: 5, text: "Excellent product. Would recommend to anyone looking for a quality graphic tee.", date: "August 3, 2023", verified: true },
 ];
 
-const RELATED_PRODUCTS: CatalogProduct[] = [
-  {
-    id: 2,
-    name: "Polo with Contrast Trims",
-    slug: "polo-with-contrast-trims",
-    image_url: "/images/Image product/image 7.png",
-    rating: 4.5,
-    price: 212,
-    original_price: 232,
-    discount_label: "-20%",
-  },
-  {
-    id: 3,
-    name: "Black Striped T-shirt",
-    slug: "black-striped-t-shirt",
-    image_url: "/images/Image product/image 8.png",
-    rating: 5.0,
-    price: 120,
-    original_price: 160,
-    discount_label: "-30%",
-  },
-  {
-    id: 4,
-    name: "Gradient Graphic T-shirt",
-    slug: "gradient-graphic-t-shirt",
-    image_url: "/images/Image product/image 9.png",
-    rating: 4.0,
-    price: 145,
-  },
-  {
-    id: 5,
-    name: "Checkered Shirt",
-    slug: "checkered-shirt",
-    image_url: "/images/Image product/image 10.png",
-    rating: 4.5,
-    price: 180,
-  },
-];
-
 type TabId = "details" | "reviews" | "faq";
 
-export default function ProductPage() {
+type ProductUiModel = {
+  id: number;
+  name: string;
+  description: string;
+  rating: number;
+  price: number;
+  originalPrice?: number;
+  discountLabel?: string;
+  images: string[];
+  colors: Array<{ name: string; value: string }>;
+  sizes: string[];
+};
+
+function toNumber(value: string | number | null | undefined): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+function buildProductUiModel(product: CatalogProduct): ProductUiModel {
+  const imageUrl =
+    product.image_url && product.image_url.trim() !== ""
+      ? product.image_url.trim()
+      : PLACEHOLDER_IMAGE;
+  const colors = Array.from(
+    new Set((product.variants ?? []).map((v) => v.color).filter(Boolean)),
+  );
+  const sizes = Array.from(
+    new Set((product.variants ?? []).map((v) => v.size).filter(Boolean)),
+  );
+  const original = toNumber(product.original_price);
+  return {
+    id: product.id,
+    name: product.name,
+    description: product.description ?? "",
+    rating: toNumber(product.rating),
+    price: toNumber(product.price),
+    originalPrice: original > 0 ? original : undefined,
+    discountLabel: product.discount_label ?? undefined,
+    images: [imageUrl],
+    colors: colors.map((c) => ({ name: c, value: c })),
+    sizes,
+  };
+}
+
+export default function ProductPage({
+  params,
+}: {
+  params: Promise<{ productID: string }>;
+}) {
+  const { productID } = use(params);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState(0);
-  const [selectedSize, setSelectedSize] = useState(2); // Large
+  const [selectedSize, setSelectedSize] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<TabId>("reviews");
+  const [product, setProduct] = useState<CatalogProduct | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<CatalogProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const product = MOCK_PRODUCT;
+  const productView = useMemo(
+    () => (product ? buildProductUiModel(product) : null),
+    [product],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadProduct() {
+      setLoading(true);
+      setError(null);
+      try {
+        const detail = await fetchCatalogProductDetail(productID);
+        if (!cancelled) {
+          setProduct(detail);
+        }
+      } catch {
+        if (!cancelled) {
+          setError(
+            "Unable to load product detail. Check API and NEXT_PUBLIC_API config.",
+          );
+          setProduct(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadProduct();
+    return () => {
+      cancelled = true;
+    };
+  }, [productID]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadRelated() {
+      if (!product) {
+        setRelatedProducts([]);
+        return;
+      }
+      try {
+        const { results } = await fetchCatalogProducts({
+          page: 1,
+          pageSize: 8,
+          categorySlug: product.primary_category?.slug ?? null,
+        });
+        if (!cancelled) {
+          setRelatedProducts(
+            results.filter((item) => item.id !== product.id).slice(0, 4),
+          );
+        }
+      } catch {
+        if (!cancelled) setRelatedProducts([]);
+      }
+    }
+    loadRelated();
+    return () => {
+      cancelled = true;
+    };
+  }, [product]);
+
+  useEffect(() => {
+    setSelectedImage(0);
+    setSelectedColor(0);
+    setSelectedSize(0);
+    setQuantity(1);
+  }, [productID]);
+
+  if (loading) {
+    return (
+      <main>
+        <Navigation />
+        <section className={styles.productSection}>
+          <div className={styles.container}>
+            <p>Loading product...</p>
+          </div>
+        </section>
+        <Footer />
+      </main>
+    );
+  }
+
+  if (error || !product || !productView) {
+    return (
+      <main>
+        <Navigation />
+        <section className={styles.productSection}>
+          <div className={styles.container}>
+            <p>{error ?? "Product not found."}</p>
+          </div>
+        </section>
+        <Footer />
+      </main>
+    );
+  }
 
   return (
     <main>
@@ -104,9 +198,11 @@ export default function ProductPage() {
             <span className={styles.breadcrumbSep}>&gt;</span>
             <Link href="#">Shop</Link>
             <span className={styles.breadcrumbSep}>&gt;</span>
-            <Link href="#">Men</Link>
+            <Link href="#">
+              {product.primary_category?.name ?? "Category"}
+            </Link>
             <span className={styles.breadcrumbSep}>&gt;</span>
-            <span>T-shirts</span>
+            <span>{product.name}</span>
           </nav>
 
           {/* Product layout: 2-column grid */}
@@ -114,7 +210,7 @@ export default function ProductPage() {
             {/* Left: Thumbnails column + Main image */}
             <div className={styles.imageColumn}>
               <div className={styles.thumbnailsColumn}>
-                {product.images.slice(0, 3).map((src, i) => (
+                {productView.images.slice(0, 3).map((src, i) => (
                   <button
                     key={i}
                     type="button"
@@ -128,8 +224,12 @@ export default function ProductPage() {
               </div>
               <div className={styles.mainImage}>
                 <Image
-                  src={product.images[selectedImage]}
-                  alt={product.name}
+                  src={
+                    productView.images[
+                      Math.min(selectedImage, productView.images.length - 1)
+                    ]
+                  }
+                  alt={productView.name}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
                   className={styles.mainImg}
@@ -140,34 +240,34 @@ export default function ProductPage() {
 
             {/* Right: Details */}
             <div className={styles.infoColumn}>
-              <h1 className={styles.productTitle}>{product.name}</h1>
+              <h1 className={styles.productTitle}>{productView.name}</h1>
               <div className={styles.ratingRow}>
                 <div className={styles.stars}>
                   {[1, 2, 3, 4, 5].map((i) => (
                     <span key={i} className={styles.starWrap}>
-                      <StarIcon filled={i <= Math.floor(product.rating)} />
+                      <StarIcon filled={i <= Math.floor(productView.rating)} />
                     </span>
                   ))}
                 </div>
-                <span className={styles.ratingText}>{product.rating}/5</span>
+                <span className={styles.ratingText}>{productView.rating}/5</span>
               </div>
               <div className={styles.priceRow}>
-                <span className={styles.price}>${product.price}</span>
-                {product.originalPrice && (
+                <span className={styles.price}>${productView.price}</span>
+                {productView.originalPrice && (
                   <>
-                    <span className={styles.originalPrice}>${product.originalPrice}</span>
-                    {product.discountLabel && (
-                      <span className={styles.discountTag}>{product.discountLabel}</span>
+                    <span className={styles.originalPrice}>${productView.originalPrice}</span>
+                    {productView.discountLabel && (
+                      <span className={styles.discountTag}>{productView.discountLabel}</span>
                     )}
                   </>
                 )}
               </div>
-              <p className={styles.description}>{product.description}</p>
+              <p className={styles.description}>{productView.description}</p>
 
               <div className={styles.optionGroup}>
                 <span className={styles.optionLabel}>Select Colors</span>
                 <div className={styles.colorSwatches}>
-                  {product.colors.map((c, i) => (
+                  {productView.colors.map((c, i) => (
                     <button
                       key={c.name}
                       type="button"
@@ -187,7 +287,7 @@ export default function ProductPage() {
               <div className={styles.optionGroup}>
                 <span className={styles.optionLabel}>Choose Size</span>
                 <div className={styles.sizeButtons}>
-                  {product.sizes.map((s, i) => (
+                  {productView.sizes.map((s, i) => (
                     <button
                       key={s}
                       type="button"
@@ -309,7 +409,7 @@ export default function ProductPage() {
           <div className={styles.relatedSection}>
             <h2 className={styles.relatedTitle}>YOU MIGHT ALSO LIKE</h2>
             <div className={styles.relatedGrid}>
-              {RELATED_PRODUCTS.map((p) => (
+              {relatedProducts.map((p) => (
                 <Link key={p.id} href={`/product/${p.id}`} className={styles.relatedCard}>
                   <ProductCard product={p} />
                 </Link>
