@@ -200,7 +200,10 @@ export default function Navigation() {
                 aria-haspopup="menu"
                 onClick={() => setIsAccountMenuOpen((prev) => !prev)}
               >
-                <CircleUserRound size={24} />
+                <span className={styles.accountIconWithStatus}>
+                  <CircleUserRound size={24} />
+                  <span className={styles.activeDot} aria-hidden="true" />
+                </span>
               </button>
               {isAccountMenuOpen ? (
                 <div className={styles.accountMenu} role="menu">

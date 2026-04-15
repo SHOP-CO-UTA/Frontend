@@ -178,6 +178,8 @@
 
 .accountWrapper {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .accountButton {
@@ -189,10 +191,29 @@
   padding: 0;
   cursor: pointer;
   transition: opacity 0.2s;
+  line-height: 0;
 
   &:hover {
     opacity: 0.6;
   }
+}
+
+.accountIconWithStatus {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.activeDot {
+  position: absolute;
+  right: 0;
+  bottom: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  border: 1.5px solid #fff;
 }
 
 .accountMenu {
