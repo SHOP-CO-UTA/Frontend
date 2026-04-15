@@ -1,38 +1,91 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import Navigation from "@/components/Navigation/navigation";
 import Footer from "@/components/Footer/footer";
+import { extractApiErrorMessage } from "@/services/auth.service";
+import {
+  fetchCart,
+  removeCartItem,
+  updateCartItemQuantity,
+} from "@/services/cart.service";
+import type { Cart } from "@/types/cart";
 import styles from "./page.module.scss";
 
-const MOCK_CART_ITEMS = [
-  { id: 1, title: "Gradient T-Shirt", size: "Large", color: "Black", price: 145, quantity: 1, image: "/images/Image cart/image 8.png" },
-  { id: 2, title: "Casual Shirt", size: "L", color: "Navy", price: 89, quantity: 2, image: "/images/Image cart/image 9.png" },
-  { id: 3, title: "Slim Fit Jeans", size: "32", color: "Blue", price: 120, quantity: 1, image: "/images/Image cart/image 10.png" },
-];
+const PLACEHOLDER_IMAGE = "/images/products/black-tshirt.png";
+
+function toNumber(value: string | number | null | undefined): number {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
+}
 
 export default function CartPage() {
-  const [items, setItems] = useState(MOCK_CART_ITEMS);
+  const [cart, setCart] = useState<Cart | null>(null);
   const [promoCode, setPromoCode] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busyItemId, setBusyItemId] = useState<number | null>(null);
+  const items = cart?.items ?? [];
 
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const discountPercent = 20;
-  const discountAmount = (subtotal * discountPercent) / 100;
-  const deliveryFee = 15;
-  const total = subtotal - discountAmount + deliveryFee;
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCart() {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await fetchCart();
+        if (!cancelled) setCart(data);
+      } catch (err) {
+        if (!cancelled) setError(extractApiErrorMessage(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    loadCart();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const updateQuantity = (id: number, delta: number) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item
-      )
-    );
+  const subtotal = useMemo(() => toNumber(cart?.subtotal_amount), [cart]);
+  const discountAmount = useMemo(() => toNumber(cart?.discount_amount), [cart]);
+  const deliveryFee = useMemo(() => toNumber(cart?.shipping_amount), [cart]);
+  const total = useMemo(() => toNumber(cart?.total_amount), [cart]);
+  const discountPercent = subtotal > 0 ? Math.round((discountAmount / subtotal) * 100) : 0;
+
+  const updateQuantity = async (id: number, nextQuantity: number) => {
+    if (busyItemId) return;
+    setBusyItemId(id);
+    try {
+      const nextCart = await updateCartItemQuantity(id, Math.max(1, nextQuantity));
+      setCart(nextCart);
+      setError(null);
+    } catch (err) {
+      setError(extractApiErrorMessage(err));
+    } finally {
+      setBusyItemId(null);
+    }
   };
 
-  const removeItem = (id: number) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const removeItem = async (id: number) => {
+    if (busyItemId) return;
+    setBusyItemId(id);
+    try {
+      await removeCartItem(id);
+      const nextCart = await fetchCart();
+      setCart(nextCart);
+      setError(null);
+    } catch (err) {
+      setError(extractApiErrorMessage(err));
+    } finally {
+      setBusyItemId(null);
+    }
   };
 
   return (
@@ -46,6 +99,8 @@ export default function CartPage() {
             <span>Cart</span>
           </nav>
           <h1 className={styles.pageTitle}>YOUR CART</h1>
+          {loading ? <p>Loading cart...</p> : null}
+          {error ? <p>{error}</p> : null}
 
           <div className={styles.cartContent}>
             {/* Left: Cart Items */}
@@ -57,14 +112,12 @@ export default function CartPage() {
                   {items.map((item) => (
                     <li key={item.id} className={styles.cartItem}>
                       <div className={styles.itemImage}>
-                        {item.image && (
-                          <Image src={item.image} alt={item.title} fill sizes="(max-width: 479px) 80px, (max-width: 767px) 100px, 120px" className={styles.itemImg} />
-                        )}
+                        <Image src={item.product_image_url || PLACEHOLDER_IMAGE} alt={item.product_name} fill sizes="(max-width: 479px) 80px, (max-width: 767px) 100px, 120px" className={styles.itemImg} />
                       </div>
                       <div className={styles.itemInfo}>
-                        <h3 className={styles.itemTitle}>{item.title}</h3>
-                        <p className={styles.itemMeta}>Size: {item.size} | Color: {item.color}</p>
-                        <p className={styles.itemPrice}>${item.price * item.quantity}</p>
+                        <h3 className={styles.itemTitle}>{item.product_name}</h3>
+                        <p className={styles.itemMeta}>Product ID: {item.product}</p>
+                        <p className={styles.itemPrice}>${toNumber(item.line_total).toFixed(2)}</p>
                       </div>
                       <div className={styles.itemActions}>
                         <button
@@ -72,22 +125,25 @@ export default function CartPage() {
                           className={styles.deleteBtn}
                           onClick={() => removeItem(item.id)}
                           aria-label="Remove item"
+                          disabled={busyItemId === item.id}
                         >
                           <TrashIcon />
                         </button>
                         <div className={styles.quantitySelector}>
                           <button
                             type="button"
-                            onClick={() => updateQuantity(item.id, -1)}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             aria-label="Decrease quantity"
+                            disabled={busyItemId === item.id}
                           >
                             <MinusIcon />
                           </button>
                           <span>{item.quantity}</span>
                           <button
                             type="button"
-                            onClick={() => updateQuantity(item.id, 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             aria-label="Increase quantity"
+                            disabled={busyItemId === item.id}
                           >
                             <PlusIcon />
                           </button>

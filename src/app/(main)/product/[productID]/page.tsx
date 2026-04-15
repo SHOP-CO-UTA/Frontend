@@ -7,6 +7,8 @@ import Navigation from "@/components/Navigation/navigation";
 import Footer from "@/components/Footer/footer";
 import ProductCard from "@/components/ProductCard/productCard";
 import type { CatalogProduct } from "@/types/catalog";
+import { addCartItem } from "@/services/cart.service";
+import { extractApiErrorMessage } from "@/services/auth.service";
 import {
   fetchCatalogProductDetail,
   fetchCatalogProducts,
@@ -89,6 +91,8 @@ export default function ProductPage({
   const [relatedProducts, setRelatedProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [addToCartMessage, setAddToCartMessage] = useState<string | null>(null);
 
   const productView = useMemo(
     () => (product ? buildProductUiModel(product) : null),
@@ -157,7 +161,22 @@ export default function ProductPage({
     setSelectedColor(0);
     setSelectedSize(0);
     setQuantity(1);
+    setAddToCartMessage(null);
   }, [productID]);
+
+  async function handleAddToCart() {
+    if (!productView || isAddingToCart) return;
+    setIsAddingToCart(true);
+    setAddToCartMessage(null);
+    try {
+      await addCartItem(productView.id, quantity);
+      setAddToCartMessage("Added to cart successfully.");
+    } catch (err) {
+      setAddToCartMessage(extractApiErrorMessage(err));
+    } finally {
+      setIsAddingToCart(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -311,10 +330,18 @@ export default function ProductPage({
                     +
                   </button>
                 </div>
-                <Link href="/cart" className={styles.addToCartBtn}>
-                  Add to Cart
-                </Link>
+                <button
+                  type="button"
+                  className={styles.addToCartBtn}
+                  onClick={handleAddToCart}
+                  disabled={isAddingToCart}
+                >
+                  {isAddingToCart ? "Adding..." : "Add to Cart"}
+                </button>
               </div>
+              {addToCartMessage ? (
+                <p role="status">{addToCartMessage}</p>
+              ) : null}
             </div>
           </div>
 

@@ -165,12 +165,69 @@
 .actions {
   display: flex;
   gap: 16px;
+  align-items: center;
 
   a {
     color: #000;
     transition: opacity 0.2s;
     &:hover {
       opacity: 0.6;
+    }
+  }
+}
+
+.accountWrapper {
+  position: relative;
+}
+
+.accountButton {
+  border: none;
+  background: transparent;
+  color: #000;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.6;
+  }
+}
+
+.accountMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 180px;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  z-index: 120;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  a,
+  button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 90%;
+    border: none;
+    background: transparent;
+    color: #000;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    text-align: left;
+
+    &:hover {
+      background: #f5f5f5;
     }
   }
 }

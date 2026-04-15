@@ -447,6 +447,8 @@ $star-color: #ffc633;
 .addToCartBtn {
   flex: 1;
   min-width: 0;
+  border: none;
+  cursor: pointer;
   padding: 16px 24px;
   font-size: 16px;
   font-weight: 600;
@@ -472,6 +474,11 @@ $star-color: #ffc633;
 
   &:active {
     transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 }
 

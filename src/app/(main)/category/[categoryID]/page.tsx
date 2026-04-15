@@ -190,14 +190,8 @@ function CategoryPageContent({
   }
 
   function handleApplyFilters() {
-    const {
-      categorySlug,
-      dressStyle,
-      color,
-      size,
-      priceMin,
-      priceMax,
-    } = draftFiltersRef.current;
+    const { categorySlug, dressStyle, color, size, priceMin, priceMax } =
+      draftFiltersRef.current;
     const currentSlug = normalizeRouteCategorySlug(categoryID);
     const q = buildCatalogQueryString({
       dressStyle,
@@ -320,21 +314,15 @@ function CategoryPageContent({
     return () => {
       cancelled = true;
     };
-  }, [
-    categoryID,
-    page,
-    categorySlugForApi,
-    appliedFilters,
-    sortLabel,
-  ]);
+  }, [categoryID, page, categorySlugForApi, appliedFilters, sortLabel]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const rangeStart = totalCount === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(page * PAGE_SIZE, totalCount);
 
   const appliedDressStyleLabel = appliedFilters.dressStyle
-    ? getDressStyleLabel(appliedFilters.dressStyle) ??
-      formatCategoryTitle(appliedFilters.dressStyle)
+    ? (getDressStyleLabel(appliedFilters.dressStyle) ??
+      formatCategoryTitle(appliedFilters.dressStyle))
     : null;
   const pageHeading = appliedDressStyleLabel
     ? `${appliedDressStyleLabel} · ${categoryName}`
@@ -399,7 +387,10 @@ function CategoryPageContent({
             </div>
 
             {error && (
-              <p className={styles.meta} style={{ color: "#b42318", marginBottom: 16 }}>
+              <p
+                className={styles.meta}
+                style={{ color: "#b42318", marginBottom: 16 }}
+              >
                 {error}
               </p>
             )}
