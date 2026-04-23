@@ -223,11 +223,6 @@
   .colorCircle {
     width: 37px;
     height: 37px;
-
-    @media (max-width: 480px) {
-      width: 32px;
-      height: 32px;
-    }
     border-radius: 50%;
     border: 1px solid rgba(0, 0, 0, 0.1);
     cursor: pointer;
@@ -235,6 +230,12 @@
     align-items: center;
     justify-content: center;
     transition: transform 0.2s ease;
+
+    @media (max-width: 480px) {
+      width: 32px;
+      height: 32px;
+    }
+
     &.active {
       transform: scale(1.1);
     }

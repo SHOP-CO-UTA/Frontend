@@ -1,12 +1,12 @@
 @use './style.scss';
-@use './variable.scss';
+@use './variable.scss' as v;
 @use './mixin.scss';
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: $font-heading;
+  font-family: v.$font-heading;
 }
 
 body {
-  font-family: $font-body;
+  font-family: v.$font-body;
   -webkit-font-smoothing: antialiased;
 }

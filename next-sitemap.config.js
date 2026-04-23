@@ -4,7 +4,7 @@ module.exports = {
   changefreq: 'daily',
   priority: 0.7,
   sitemapSize: 5000,
-  e,
+  // e,
   // generateRobotsTxt: true,      // generate robots.txt
   exclude: ['/api/**']
 };

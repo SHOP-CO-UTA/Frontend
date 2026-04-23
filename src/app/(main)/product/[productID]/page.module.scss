@@ -1,3 +1,4 @@
+@use "sass:color";
 @use "@/styles/variable.scss" as v;
 
 $black: #000;
@@ -367,7 +368,7 @@ $star-color: #ffc633;
   }
 
   &:hover {
-    background: darken($gray-light, 5%);
+    background: color.adjust($gray-light, $lightness: -5%);
     color: $black;
   }
 }
@@ -377,7 +378,7 @@ $star-color: #ffc633;
   color: $white;
 
   &:hover {
-    background: lighten($black, 15%);
+    background: color.adjust($black, $lightness: 15%);
   }
 }
 
@@ -481,7 +482,7 @@ $star-color: #ffc633;
 
   &:hover {
     opacity: 0.92;
-    background: lighten($black, 10%);
+    background: color.adjust($black, $lightness: 10%);
   }
 
   &:active {
@@ -688,7 +689,7 @@ $star-color: #ffc633;
 
   &:hover {
     opacity: 0.92;
-    background: lighten($black, 10%);
+    background: color.adjust($black, $lightness: 10%);
   }
 
   &:active {
